@@ -6,12 +6,12 @@ include "env" {
 
   path = find_in_parent_folders("env.hcl")
   expose = true
-  merge_strategy = false 
+  merge_strategy = "no_merge" 
 }
 
 inputs = {
     tags = {
-      Name = "${env.local.env}"
+      Name = "${include.env.locals.env}"
     }
     vpc_cdir = "10.0.0.0/16"
     public_subnet_cdirs = ["10.0.1.0/24","10.0.2.0/24","10.0.3.0/24"]
