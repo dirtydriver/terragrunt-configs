@@ -3,31 +3,55 @@ terraform {
 }
 
 include "env" {
-
-  path = find_in_parent_folders("env.hcl")
-  expose = true
-  merge_strategy = "no_merge" 
+  path           = find_in_parent_folders("env.hcl")
+  expose         = true
+  merge_strategy = "no_merge"
 }
 
 include "root" {
   path = find_in_parent_folders()
 }
-inputs = {
-    tags = {
-      Name = "${include.env.locals.env}"
-    }
-    vpc_cdir = "10.0.0.0/16"
-    public_subnet_cdirs = ["10.0.1.0/24","10.0.2.0/24","10.0.3.0/24"]
-    private_subnet_cdirs = ["10.0.4.0/24","10.0.5.0/24","10.0.6.0/24"]
-    azs = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
-}
 
 dependency "eks" {
   config_path = "../eks"
 
+  skip_outputs = false  # Set to true if EKS cluster module hasn't been applied
   mock_outputs = {
-    eks_cluster_name = "eks-cluster"
-    
+    cluster_name = "mockoutputs_eks"
+    node_role_arn = "mockoutputs_arn"
   }
+}
 
+dependency "vpc" {
+  config_path = "../vpc"
+
+  skip_outputs = false
+
+  mock_outputs = {
+    private_subnets_ids = ["subnet-1234", "subnet-5678"]
+  }
+}
+
+inputs = {
+  eks_cluster_name = dependency.eks.outputs.cluster_name
+  node_role_arn    = dependency.eks.outputs.node_role_arn
+  tags             = {
+    Environment = include.env.locals.env
+    Project     = "EKS"
+  }
+  node_groups = {
+    # Define your node groups here
+    ng1 = {
+      desired_size    = 2
+      max_size        = 5
+      min_size        = 1
+      instance_types  = ["t2.small"]
+      max_unavailable = 1
+      subnets         = dependency.vpc.outputs.private_subnets_ids
+      tags = {
+        Name = "ng1"
+      }
+    }
+    # Add more node groups if needed
+  }
 }
