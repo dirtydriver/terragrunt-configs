@@ -27,6 +27,7 @@ dependency "vpc" {
 
 inputs = {
   cluster_name              = "eks-${include.env.locals.env}"
+  aws_region                = "eu-central-1"
   subnet_ids                = dependency.vpc.outputs.private_subnets_ids
   vpc_id                    = dependency.vpc.outputs.vpc_id
   endpoint_private_access   = false   # Set to true or false based on your requirements
@@ -37,6 +38,4 @@ inputs = {
     Environment = include.env.locals.env
     Project     = "EKS"
   }
-
-
 }
